@@ -29,10 +29,13 @@ app.get('/api/', (req, res) => {
 })
 
 app.get('/api/info', (req, res) => {
-	res.send(`
-		<p>puhelinluettelossa on ${persons.length} henkilön tiedot</p>
-		<p>${new Date()}</p>
-	`)
+	Person.find({})
+		.then(persons => {
+			res.send(`
+				<p>puhelinluettelossa on ${persons.length} henkilön tiedot</p>
+				<p>${new Date()}</p>
+			`)
+		})
 })
 
 app.get('/api/persons', (req, res) => {
@@ -47,18 +50,20 @@ app.get('/api/persons/:id', (req, res) => {
 		.then(person => {
 			res.json(formatPerson(person))
 		})
+		.catch(error => {
+			res.status(400).end()
+		})
 })
 
 app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  persons = persons.filter(person => person.id !== id)
-  res.status(204).end()
+  Person.findByIdAndRemove(req.params.id)
+		.then(result => {
+			res.status(204).end()
+		})
+		.catch(error => {
+			res.status(400).send({error: 'malformatted id'})
+		})
 })
-
-const personExists = () => {
-	
-	return true
-}
 
 app.post('/api/persons', (req, res) => {
 	const body = req.body
@@ -77,6 +82,26 @@ app.post('/api/persons', (req, res) => {
 			res.json(formatPerson(savedPerson))
 		})
 })
+
+app.put('/api/persons/:id', (req, res) => {
+	const body = req.body
+
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+	
+  Person
+    .findByIdAndUpdate(req.params.id, person, { new: true } )
+    .then(updatedPerson => {
+      res.json(formatPerson(updatedPerson))
+    })
+    .catch(error => {
+      console.log(error)
+      res.status(400).send({ error: 'malformatted id' })
+    })
+})
+
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
