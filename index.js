@@ -71,16 +71,30 @@ app.post('/api/persons', (req, res) => {
   if (body.name === undefined || body.number === undefined) {
     return res.status(400).json({error: 'content or number missing'})
   } 
-
+	
   const person = new Person({
     name: body.name,
     number: body.number,
   })
 
+	Person.find({name: person.name})
+		.then(result => {
+			if (!result.length) {
+				return person.save()
+			} 
+		})
+		.then(savedPerson => {
+			if (savedPerson !== undefined)
+				res.json(formatPerson(savedPerson))
+			else
+				res.status(400).send({error: 'person by name exists'})
+		}) 
+	
+	/*
   person.save()
 		.then(savedPerson => {
 			res.json(formatPerson(savedPerson))
-		})
+		}) */
 })
 
 app.put('/api/persons/:id', (req, res) => {
